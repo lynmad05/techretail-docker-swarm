@@ -11,8 +11,6 @@ services:
       replicas: 3
       restart_policy:
         condition: on-failure
-        delay: 5s
-        max_attempts: 3
 
   backend:
     image: node:18-alpine
@@ -25,6 +23,8 @@ services:
         condition: on-failure
     secrets:
       - db_password
+    configs:
+      - app_config
 
   database:
     image: mysql:8
@@ -70,4 +70,8 @@ volumes:
 
 secrets:
   db_password:
+    external: true
+
+configs:
+  app_config:
     external: true
