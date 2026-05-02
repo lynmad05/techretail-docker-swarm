@@ -11,45 +11,103 @@
 
 Este proyecto implementa una arquitectura de microservicios utilizando **Docker Swarm** para la empresa ficticia **TechRetail**, una plataforma de comercio electrónico que requiere alta disponibilidad, escalabilidad horizontal y balanceo de carga.
 
-El sistema permite simular un entorno productivo distribuido, compuesto por múltiples nodos que ejecutan contenedores de forma orquestada.
+El sistema simula un entorno productivo distribuido mediante múltiples nodos virtuales que ejecutan contenedores de forma orquestada.
 
 ---
 
 ## 2. Caso de estudio
 
-TechRetail presentaba problemas de rendimiento debido al crecimiento de usuarios en campañas de alta demanda como “Cyber Days”, generando:
+TechRetail presentaba problemas de rendimiento durante campañas de alta demanda (como “Cyber Days”), generando:
 
 * Caídas del sistema en horas pico
 * Tiempos de respuesta elevados
 * Pérdidas económicas por inactividad
 * Falta de escalabilidad
 
-Para resolver esto, se implementa Docker Swarm como solución de orquestación de contenedores.
+Para solucionar estos problemas, se implementa **Docker Swarm** como herramienta de orquestación.
 
 ---
 
 ## 3. Arquitectura del sistema
 
-El clúster está compuesto por:
+La infraestructura fue implementada mediante **máquinas virtuales en VMware Workstation**, cada una con **Ubuntu Server 22.04 LTS**.
 
-* 1 nodo **Manager**
-* 2 nodos **Worker**
-* Red **overlay (techretail_net)** para comunicación interna
+### 🔹 Nodos del clúster
 
-### Microservicios desplegados:
+* **1 nodo Manager (swarm-manager)**
 
-* **Frontend**: Nginx (interfaz web)
-* **Backend**: Node.js (API REST)
-* **Database**: MySQL (persistencia de datos)
-* **Cache**: Redis (optimización de consultas)
-* **Visualizer**: monitoreo del clúster Swarm
+  * Orquesta el clúster
+  * Gestiona el estado del sistema
+  * Distribuye tareas
+
+* **2 nodos Worker (swarm-worker-1, swarm-worker-2)**
+
+  * Ejecutan los contenedores asignados
+
+### 🔹 Red
+
+* Red overlay: `techretail_net`
+* Permite comunicación entre servicios sin importar el nodo físico
 
 ---
 
-## 4. Tecnologías utilizadas
+## 4. Microservicios desplegados
+
+| Servicio   | Tecnología        | Descripción               |
+| ---------- | ----------------- | ------------------------- |
+| Frontend   | Nginx             | Interfaz web              |
+| Backend    | Node.js           | API REST                  |
+| Database   | MySQL             | Persistencia de datos     |
+| Cache      | Redis             | Optimización de consultas |
+| Visualizer | Docker Visualizer | Monitoreo del clúster     |
+
+---
+
+## 5. Configuración del sistema
+
+### Seguridad
+
+* Uso de **Docker Secrets** para la contraseña de base de datos
+* Protección de credenciales en `/run/secrets/`
+
+### Configuración
+
+* Uso de **Docker Config** para variables:
+
+  * API_PORT
+  * APP_NAME
+  * ENV
+
+---
+
+## 6. Funcionalidades implementadas
+
+### 🔹 Orquestación
+
+Gestión de contenedores en múltiples nodos mediante Docker Swarm.
+
+### 🔹 Escalabilidad
+
+* Frontend: 3 réplicas (escalable)
+* Backend: 2 réplicas
+* Escalado dinámico con comandos Docker
+
+### 🔹 Alta disponibilidad
+
+* Reinicio automático de servicios ante fallos (`restart_policy`)
+
+### 🔹 Distribución de carga
+
+* Balanceo automático entre contenedores
+
+---
+
+## 7. Tecnologías utilizadas
 
 * Docker
 * Docker Swarm
+* VMware Workstation
+* Ubuntu Server 22.04
 * Nginx
 * Node.js
 * MySQL
@@ -57,92 +115,63 @@ El clúster está compuesto por:
 
 ---
 
-## 5. Servicios del sistema
+## 8. Evidencias
 
-| Servicio   | Imagen         | Réplicas |
-| ---------- | -------------- | -------- |
-| Frontend   | nginx:alpine   | 3        |
-| Backend    | node:18-alpine | 2        |
-| Database   | mysql:8        | 1        |
-| Cache      | redis:7-alpine | 1        |
-| Visualizer | dockersamples  | 1        |
+Las evidencias del proyecto se encuentran organizadas de la siguiente manera:
 
+- Carpeta `/informe`: contiene el informe técnico completo en PDF  
+  - Capturas del despliegue  
+  - Explicación detallada del proceso  
+  - Enlace al video demostrativo  
+
+> Nota: No se incluyen capturas ni videos directamente en el repositorio por organización y buenas prácticas.
+> Se recomienda revisar el informe para una comprensión completa del despliegue.
 ---
 
-## 6. Funcionalidades implementadas
+## 10. Cómo ejecutar el proyecto
 
-### 6.1 Orquestación con Docker Swarm
+### 🔹 Requisitos
 
-Se utiliza Swarm para administrar múltiples nodos y distribuir contenedores automáticamente.
+* Docker instalado
+* Docker Swarm inicializado
+* 3 nodos (1 manager y 2 workers)
 
-### 6.2 Escalabilidad
+### 🔹 Pasos
 
-* Frontend escalado a mínimo 3 réplicas
-* Backend con 2 réplicas
-* Escalado dinámico con `docker service scale`
-
-### 6.3 Alta disponibilidad
-
-Los servicios se reinician automáticamente en caso de fallos mediante `restart_policy`.
-
-### 6.4 Seguridad
-
-Se implementa:
-
-* Docker Secrets para credenciales de base de datos
-
----
-
-## 7. Comandos principales
-
-### Inicializar Swarm
+1. Clonar el repositorio:
 
 ```bash
-docker swarm init --advertise-addr <IP_MANAGER>
+git clone https://github.com/tu-repo/techretail.git
+cd techretail
 ```
 
-### Crear secret
+2. Crear el secret:
 
 ```bash
-echo "MiPasswordSegura123" | docker secret create db_password -
+echo "password" | docker secret create db_password -
 ```
 
-### Desplegar stack
+3. Crear el config:
+
+```bash
+docker config create app_config configs/app_config.env
+```
+
+4. Desplegar el stack:
 
 ```bash
 docker stack deploy -c docker-compose.yml techretail
 ```
 
-### Ver servicios
+5. Verificar servicios:
 
 ```bash
 docker stack services techretail
 ```
 
-### Ver nodos
-
-```bash
-docker node ls
-```
-
-### Escalar frontend
-
-```bash
-docker service scale techretail_frontend=5
-```
-
 ---
 
-## 8. Evidencias
-
-Las evidencias del despliegue se encuentran organizadas en el repositorio:
-
-* `/screenshots`: capturas del clúster, servicios y escalado
-* `/docs`: informe técnico en PDF
-
----
-
-## 9. Resultado esperado
+## 11. Resultados
 
 El sistema demuestra:
 
@@ -153,9 +182,8 @@ El sistema demuestra:
 
 ---
 
-## 10. Conclusión
+## 12. Conclusión
 
-Docker Swarm permite la orquestación eficiente de contenedores en entornos distribuidos, mejorando la escalabilidad, disponibilidad y administración de servicios en aplicaciones modernas.
+Docker Swarm permite implementar soluciones distribuidas de forma eficiente, facilitando la administración, escalabilidad y disponibilidad de aplicaciones modernas.
 
 ---
-
